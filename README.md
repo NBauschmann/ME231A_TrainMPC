@@ -1,7 +1,9 @@
 # ME231A_TrainMPC
 
 TODO: Write a ReadMe
+
 TODO: Find jobs for everyone
+
 Tom and Nathalie are currently working on implementing the paper
 
 # Abstract
