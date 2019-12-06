@@ -6,6 +6,11 @@ TODO: Find jobs for everyone
 
 Tom and Nathalie are currently working on implementing the paper
 
+
+# Current Issues
+
+Careful: Data from midterm and parameters from paper are different (different trains), one of them currently gets overwritten, depending on order called
+
 # Abstract
 
 The abstract should concisely describe your plans . Think about the complexity, the type of model you want to use, experiments or sims, forecast the major issues.
