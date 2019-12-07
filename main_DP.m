@@ -27,7 +27,10 @@
 % - When (eventually) using paper track data: this contains stops! Careful
 % with v_min in this case -> needs to be 0 at stations!
 % (currently v_min = 0.1 as in midterm)
-% - find sensible/efficient gridding for input space
+% - backwards computation of u given v and v_next based on trapezoidal
+% formula from paper does not work yet.
+% -> TODO: check reasoning behind trapezoidal formula, think of other ways
+% to grid over u if this does not work
 
 clear all; close all
 %% Set path
@@ -35,6 +38,14 @@ addpath('data','functions')
 %% Load parameters
 load train_data_midterm
 parameters();   % overwrites param struct from midterm data 
+
+A = param.A;
+B = param.B;
+C = param.C;
+M = param.M;
+g = param.g;
+
+
 %% Define state and input constraints
 u_min = -param.M * param.abr;
 u_max = param.M * param.adr;
@@ -43,7 +54,7 @@ track_length = profile(end,1); % in meters
 ds = 10; % sampling in space
 s_sampled = 0:ds:track_length; % sampled train position
 N_s = length(s_sampled);
-%% Grid the state space
+%% Grid the state space (v)
 v_min = 0.1;
 dv = 0.1;
 % grid from 0.1 to the max speed over the track at any s
@@ -51,27 +62,32 @@ v_sampled = v_min:dv:max(maxspeed(s_sampled));
 N_v = length(v_sampled);
 v_idx_set = 1:N_v;
 
+%% This function computes the next speed given the current speed, input and position
+% -> Using trapezoidal formula to avoid gridding over v and F
+% -> Only gridding over v, using:
+%    v_i+1 = sqrt(v_i^2 + (2*delta_s*(-A -B*v_i - C*v_i^2 - Fg - u_i) / M ))
+comp_v_next = @(v,u,s) real(sqrt(v^2 + 2*ds*(-A -B*v -C*v^2 + M*g*slope(s) - u) / M));
 %% Grid the input space for DP
 %%%%%%%%%%%% What the midterm did:
 % dynamic input grid, umax and umin are calculated according to v for each
 % step
-% N_u = 10;
 % % This funtion computes the next speed given the current speed, input and position
 % comp_v_next = @(v,u,s) v+ds/(v*M) *(-A-B*v-C*v^2-M*g*slope(s) -M*6/radius(s)+u);
 % 
 % % This funtion computes the input to bring speed v to speed v next
 % at position s
 % comp_u = @(v,v_next,s) M*(v_next - v)/(ds)*v - (-A-B*v-C*v^2-M*g*slope(s) -M*6/radius(s));
-%%%%%%%%%%%%
-% Cannot do this anymore -> find solution or just accept long runtimes
-%%%%%%%%%%%%
-N_u = 100;   % TODO: find sensible value
-u_grid_values = linspace(u_min,u_max,N_u);
-
+%% This function computes input to bring speed v to speed_v_next
+% at position s
+% Using trapezoidal formula used to discretize state
+% space to solve for u:
+Nu = 10;  % number of u grid points in dynamic input grid
+comp_u = @(v,v_next,s)   A + B*v + C*v^2 - M*g*slope(s) - ...
+    (v_next^2 - v^2)*M /(2*ds);
 %% Define stage cost
 Jstage = @(v,u) ds/v;
 
-%% Initialization of Cost?to?Go
+%% Initialization of Cost-to-Go
 for i = v_idx_set
     if v_sampled(i) > maxspeed(s_sampled(N_s))
         J(N_s,i) = inf;
@@ -85,31 +101,32 @@ Jopt{N_s} = @(v) 0;
 
 
 %% Perform Dynamic Programming
+% Optimization problem: 
+% J*_i->Ns(v_i) = min u   q (v_i,u_i) + J*_i+1->Ns (v_i+1) 
 
 % initialize
 JoptArray = zeros(length(v_idx_set),N_s-1);  % check if right size
 UoptArray = zeros(length(v_idx_set),N_s-1);
 
 tic
-for p_indx = N_s-1:-1:1
-    fprintf('Solving DP at position = %i (meters) \n',s_sampled(p_indx));
-    J(p_indx,:) = inf(1,N_v);
-    u(p_indx,:) = nan(1,N_v);
-    s = s_sampled(p_indx);
+for s_indx = N_s-1:-1:1
+    fprintf('Solving DP at position = %i (meters) \n',s_sampled(s_indx));
+    J(s_indx,:) = inf(1,N_v);
+    u(s_indx,:) = nan(1,N_v);
+    s = s_sampled(s_indx);
     for i = v_idx_set
         v = v_sampled(i);
+        Fg = - M*g*slope(s);
         Jbest = inf; 
         Ubest = nan;
-        % um = comp_u(v,0.1,s);
-        % uM = comp_u(v,maxspeed(s+ds),s);
-        % for u_grid = linspace(max(umin,um),min(umax,uM),N_u)
-        for u_grid = u_grid_values
-            % v_next = comp_v_next(v,u_grid,s);
-            F = 0;  % TODO
-            x = [s; v; F];
-            v_next = train_dynamics(x,u_grid,param);
+        % Find input needed to get to v_min and v_max to grid input space
+        % optimally
+        um = comp_u(v,v_min,s);
+        uM = comp_u(v,maxspeed(s+ds),s);
+        for u_grid = linspace(max(u_min,um),min(u_max,uM),Nu)
+            v_next = comp_v_next(v,u_grid,s);
             if v_next>=v_min && v_next<=maxspeed(s + ds)
-                Jactual = Jstage(v,u_grid) + Jopt{p_indx+1}(v_next);
+                Jactual = Jstage(v,u_grid) + Jopt{s_indx+1}(v_next);
                 if ~isnan(Jactual)
                     if Jactual<Jbest
                         Jbest = Jactual;
@@ -118,16 +135,16 @@ for p_indx = N_s-1:-1:1
                 end % ~isnan
             end % v inside constraints
         end % loop over u
-        if v>maxspeed(s)  % should not be necessary
+        if v>maxspeed(s)  % should not be necessary?
             Jbest = inf;
             Ubest = nan;
         end
-    JoptArray(i,p_indx) = Jbest;
-    UoptArray(i,p_indx) = Ubest;
+    JoptArray(i,s_indx) = Jbest;
+    UoptArray(i,s_indx) = Ubest;
     end % loop over v
-    Jopt{p_indx} = @(v) interpn(v_sampled,JoptArray(:,p_indx),v,'linear');
-    Uopt{p_indx} = @(v) interpn(v_sampled,UoptArray(:,p_indx),v,'linear');
-end % loop over p
+    Jopt{s_indx} = @(v) interpn(v_sampled,JoptArray(:,s_indx),v,'linear');
+    Uopt{s_indx} = @(v) interpn(v_sampled,UoptArray(:,s_indx),v,'linear');
+end % loop over s
 
 fprintf(' Total solution time: %i\n' , toc);
 
@@ -161,5 +178,34 @@ plot(s_sampled,slopes)
 xlabel('position')
 ylabel('slope')
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%s
+%% Debugging
+figure
+% plot of slope and maxspeed
+slopes = [];
+for s = s_sampled
+    slopes = [slopes slope(s)];
+end
+subplot(2,1,1)
+plot(s_sampled,slopes)
+xlabel('position')
+ylabel('slope')
+
+maxspeeds = [];
+for s = s_sampled
+    maxspeeds = [maxspeeds maxspeed(s)];
+end
+subplot(2,1,2)
+plot(s_sampled,maxspeeds)
+xlabel('position')
+ylabel('maxspeed')
+%%
+v = 20;
+s = 1100; % slope is zero here, maxspeed is 23.6111
+u = 0; % umin: -147936; umax: 144720
+
+v_next = comp_v_next(v,u,s)
+
+u_backwards = comp_u(v,v_next,s)
 
 
