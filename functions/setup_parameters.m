@@ -93,6 +93,7 @@ elseif MODEL == midterm
     % 
     param.X0 = 0;
     % 
+    param.mumax = 0.09 ; 
 
     % MPC parameters
 
@@ -112,6 +113,7 @@ elseif MODEL == midterm
     param.Kj_f = 0.5 ;
     param.Kv_DP = 1.0 ;
     param.Kl_DP = 1.0e+05 ;
+    
     
     
     

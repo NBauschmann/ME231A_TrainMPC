@@ -27,6 +27,7 @@ if MODEL == midterm
     Kv_l = param.Kv_l ;
     M = param.M ;
     Np = param.Np ;
+    g = param.g ;
 
 
     
