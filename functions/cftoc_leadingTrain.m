@@ -24,16 +24,10 @@ paper = 0 ;
 if MODEL == midterm
 
     % paramters 
-    delta_t = param.delta_t ;
     Kv_l = param.Kv_l ;
-    Kj_l = param.Kj_l ;
     M = param.M ;
     Np = param.Np ;
-    jmax = param.jmax ;
-    abr = param.abr ;
-    adr = param.adr ; 
-    Pbr = param.Pbr ;
-    Pdr = param.Pdr ;
+
 
     
     % define optimization variable for state
@@ -53,20 +47,16 @@ if MODEL == midterm
         % paper, eq. 7a
         % could function maxspeed would have to be adapted
     end
-    for k = 1:Np-1
-        objective = objective + Kj_l * norm((x(3,k+1) - x(3,k))* M / delta_t);     
-    end
     
     % define constraints
     constraints = [];
     for i = 1:Np
-    constraints = [constraints x(:,i+1) == train_dynamics(x(:,i), u(1,i), param)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
-        0 <= x(2,i+1) <= maxspeed(xbar(2,i+1)) ...
-        -jmax <= (x(3,k+1) - x(3,k))/ (M * delta_t) <= jmax ....
-        -M * abr <= u(1,i) <= M * adr...
-        -Pbr <= x(2,i+1) * u(1,i) <= Pdr];
+    constraints = [constraints x(:,i+1) == train_dynamics_midterm(x(:,i), u(1,i), param)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
+        0 <= x(2,i+1) <= maxspeed(xbar(1,i+1)) ...
+        -M * g * param.mumax  <= u(1,i) <= M * g * param.mumax]; 
+        %-Pbr <= x(2,i+1) * u(1,i) <= Pdr];
     end
-    constraints  = [constraints 0 <= x(2,Np+1) <= v_DP_l(xbar(2,Np+1),p_sampled ,vOpt_DP)];
+    constraints  = [constraints 0 <= x(2,Np+1) <= limspeed(xbar(1,Np+1),p_sampled ,vOpt_DP)];
     
     options = sdpsettings('verbose',1,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
         'fmincon.MaxFunEvals',500000);
@@ -123,22 +113,22 @@ elseif MODEL == paper
         % could function maxspeed would have to be adapted
     end
     for k = 1:Np-1
-        objective = objective + Kj_l * norm((x(3,k+1) - x(3,k))* M / delta_t);     
+        objective = objective + Kj_l * norm((x(3,k+1) - x(3,k)) / (delta_t* M));     
     end
     
     % define constraints
     constraints = [];
     for i = 1:Np
     constraints = [constraints x(:,i+1) == train_dynamics(x(:,i), u(1,i), param)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
-        0 <= x(2,i+1) <= maxspeed(xbar(2,i+1)) ...
+        0 <= x(2,i+1) <= maxspeed(xbar(1,i+1)) ...
         -jmax <= (x(3,k+1) - x(3,k))/ (M * delta_t) <= jmax ....
         -M * abr <= u(1,i) <= M * adr...
         -Pbr <= x(2,i+1) * u(1,i) <= Pdr];
     end
-    constraints  = [constraints 0 <= x(2,Np+1) <= v_DP_l(xbar(2,Np+1),p_sampled ,vOpt_DP)];
+    constraints  = [constraints 0 <= x(2,Np+1) <= limspeed(xbar(1,Np+1),p_sampled ,vOpt_DP)];
     
     options = sdpsettings('verbose',1,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
-        'fmincon.MaxFunEvals',500000);
+        'fmincon.MaxFunEvals',5000000);
     
     sol = optimize(constraints, objective, options);
  
