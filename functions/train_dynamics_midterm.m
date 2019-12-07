@@ -28,12 +28,12 @@ g = param.g ;
 
 % computation of external force 
 Fg = - M * g * slope(s) ; % gravity force component
-Fr = - M * 6 *10^6 /radius(s) ;  % curving resistance
+Fr = - M * 6 /radius(s) ;  % curving resistance
 Fe = Fg + Fr ;
 
 % computation of states at time k+1 
 s_ = s + delta_t * v ;
-v_ = v + delta_t * (-A -B*v -C*v^2 - Fe + u)/M ;
+v_ = v + delta_t * (-A -B*v -C*v^2 + Fe + u)/M ;
 
 x_ = [s_; v_];
 
