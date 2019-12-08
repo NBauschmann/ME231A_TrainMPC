@@ -1,4 +1,4 @@
-function x_ = train_dynamics_midterm(x, u, param)
+function x_ = train_dynamics_midterm(x, u, param, slope_,radius_,limspeed_,maxspeed_)
 %% calculates the system dynamics
 %% inputs
 % states x = [s(k), v(k), F(k)] at time k
@@ -27,8 +27,8 @@ M = param.M ;
 g = param.g ;
 
 % computation of external force 
-Fg = - M * g * slope(s) ; % gravity force component
-Fr = - M * 6 / (radius(s)) ;  % curving resistance
+Fg = - M * g * slope_(s) ; % gravity force component
+Fr = - M * 6 / (radius_(s)) ;  % curving resistance
 Fe = Fg + Fr ;
 
 % computation of states at time k+1 

@@ -1,5 +1,5 @@
 function [feas_l, xOpt_l, uOpt_l, JOpt_l] = cftoc_leadingTrain(x0, ... 
-     xbar, ubar, MODEL, param, p_sampled, vOpt_DP)
+     xbar, ubar, MODEL, param, slope_,radius_,limspeed_,maxspeed_)
 %% solves CFTOC problem for the leading train
 %% Inputs
 % ubar      vector containing the inputs used for the estimation
@@ -42,8 +42,8 @@ if MODEL == midterm
     objective = 0 ;
     
     for k = 1:Np
-        % objective = objective + Kv_l * norm(x(2,k) - maxspeed(xbar(1,k)));     
-        objective = objective + Kv_l * norm(x(2,k) - maxspeed(x(1,k)));   % used in paper  
+        % objective = objective + Kv_l * norm(x(2,k) - maxspeed_(xbar(1,k)));     
+        objective = objective + Kv_l * norm(x(2,k) - maxspeed_(x(1,k)));   % used in paper  
         % here the estimated state (position) is used... (deviation from
         % paper, eq. 7a
         % could function maxspeed would have to be adapted
@@ -52,13 +52,13 @@ if MODEL == midterm
     % define constraints
     constraints = [];
     for i = 1:Np
-    constraints = [constraints x(:,i+1) == train_dynamics_midterm(x(:,i), u(1,i), param)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
-        0 <= x(2,i+1) <= maxspeed(xbar(1,i+1)) ...
+    constraints = [constraints x(:,i+1) == train_dynamics_midterm(x(:,i), u(1,i), param,slope_,radius_,limspeed_,maxspeed_)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
+        0 <= x(2,i+1) <= maxspeed_(xbar(1,i+1)) ...
         -M * g * param.mumax  <= u(1,i) <= M * g * param.mumax]; 
         %-Pbr <= x(2,i+1) * u(1,i) <= Pdr];
     end
-    %constraints  = [constraints 0 <= x(2,Np+1) <= limspeed(x(1,Np+1),p_sampled ,vOpt_DP)];
-    constraints  = [constraints 0 <= x(2,Np+1) <= limspeed(xbar(1,Np+1),p_sampled ,vOpt_DP)];
+    %constraints  = [constraints 0 <= x(2,Np+1) <= limspeed_(x(1,Np+1),p_sampled ,vOpt_DP)];
+    constraints  = [constraints 0 <= x(2,Np+1) <= limspeed_(xbar(1,Np+1))];
 
     options = sdpsettings('verbose',1,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
         'fmincon.MaxFunEvals',500000);
@@ -109,7 +109,7 @@ elseif MODEL == paper
     
     for k = 1:Np
         % objective = objective + Kv_l * norm(x(2,k) - maxspeed(xbar(1,k)));     
-        objective = objective + Kv_l * norm(x(2,k) - maxspeed(x(1,k)));   % used in paper  
+        objective = objective + Kv_l * norm(x(2,k) - maxspeed_(x(1,k)));   % used in paper  
         % here the estimated state (position) is used... (deviation from
         % paper, eq. 7a
         % could function maxspeed would have to be adapted
@@ -121,13 +121,13 @@ elseif MODEL == paper
     % define constraints
     constraints = [];
     for i = 1:Np
-    constraints = [constraints x(:,i+1) == train_dynamics(x(:,i), u(1,i), param)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
-        0 <= x(2,i+1) <= maxspeed(xbar(1,i+1)) ...
+    constraints = [constraints x(:,i+1) == train_dynamics(x(:,i), u(1,i), param,slope_,radius_,limspeed_,maxspeed_)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
+        0 <= x(2,i+1) <= maxspeed_(xbar(1,i+1)) ...
         -jmax <= (x(3,k+1) - x(3,k))/ (M * delta_t) <= jmax ....
         -M * abr <= u(1,i) <= M * adr...
         -Pbr <= x(2,i+1) * u(1,i) <= Pdr];
     end
-    constraints  = [constraints 0 <= x(2,Np+1) <= limspeed(xbar(1,Np+1),p_sampled ,vOpt_DP)];
+    constraints  = [constraints 0 <= x(2,Np+1) <= limspeed_(xbar(1,Np+1))];
     
     options = sdpsettings('verbose',1,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
         'fmincon.MaxFunEvals',5000000);

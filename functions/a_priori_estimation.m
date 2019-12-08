@@ -1,4 +1,5 @@
-function [xbar, ubar] = a_priori_estimation(xt,uOpt,param,MODEL) 
+function [xbar, ubar] = a_priori_estimation(xt,uOpt,param,MODEL,...
+    slope_,radius_,limspeed_,maxspeed_) 
 %% computes the a priori estimation based on the last solution of the CFTOP
 % xbar(1)|t = xt
 % xbar(k+1)|t = f(xbar(k)|t,ubar(k)|t) for k=1...Np-1
@@ -22,9 +23,11 @@ xbar = zeros(size(xt,1),Np+1) ;
 xbar(:,1) = xt ;
 for i = 1:Np
     if MODEL == midterm
-        xbar(:,i+1) = train_dynamics_midterm(xbar(:,i), ubar(:,i), param) ;
+        xbar(:,i+1) = train_dynamics_midterm(xbar(:,i), ubar(:,i), param,...
+            slope_,radius_,limspeed_,maxspeed_) ;
     elseif MODEL == paper
-        xbar(:,i+1) = train_dynamics(xbar(:,i), ubar(:,i), param) ;
+        xbar(:,i+1) = train_dynamics(xbar(:,i), ubar(:,i), param,...
+            slope_,radius_,limspeed_,maxspeed_) ;
     else
         error('MODEL is not assigned correctly')
     end
