@@ -54,6 +54,7 @@ d_min = param.d_min;
 a_l = param.a_l; % max accelerations for terminal constraint on distance
 a_f = param.a_f; % -> have to tune this
                  % (or leave out this constraint)
+L = param.L ; % length of trains
 %% define optimization variable for state
 x = sdpvar(2,Np+1);
 assign(x(:,1),x0);
@@ -62,7 +63,7 @@ u = sdpvar(1,Np);
 %% define objective function
 objective = 0;
 % initialize distance to leader in each time step
-d = zeros(Np+1);
+%d = zeros(1,Np+1);
 xbar_l = zeros(2,Np+1);
 xbar_l(:,1) = xleader;
 for k = 1:Np+1 % sum from t to t+Np, because of matlab indexing -> from 1 to Np+1  
@@ -72,8 +73,8 @@ for k = 1:Np+1 % sum from t to t+Np, because of matlab indexing -> from 1 to Np+
         % the leader's optimal control input could be computed by optimizing 
         % using the measured (and stored) last state of the leader  
     end
-    d(k) = x(1,k) - xbar_l(1,k) - L;  % current distance to leader
-    objective = objective + Kd * norm(d(k) - d_des) + ...
+ %   d(1,k) = x(1,k) - xbar_l(1,k) - L;  % current distance to leader
+    objective = objective + Kd * norm(xbar_l(1,k) - x(1,k) - L - d_des) + ...
         Kv_f * norm(x(2,k) - maxspeed_(x(1,k)));   % used in paper  
 end
 %% define constraints
@@ -81,7 +82,7 @@ constraints = [];
 for i = 1:Np % constraints for time steps t to t+Np-1, have terminal constraints for timestep t+Np
     constraints = [constraints x(:,i+1) == train_dynamics_midterm(x(:,i),...  % (11d)
         u(1,i),param,slope_,radius_,limspeed_,maxspeed_)... % with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
-    d_min <= d(i) ...  % (11e)
+    d_min <= xbar_l(1,i) - x(1,i) - L ...  % (11e)
     0 <= x(2,i+1) <= maxspeed_(xbar(1,i+1)) ... % (11f)
     % can't use (11g) without force in states
     -M*g*param.mumax  <= u(1,i) <= M*g*param.mumax]; % midterm equivalent of (11h)
@@ -92,8 +93,8 @@ constraints = [constraints x0 == x(:,1)];  % (11j)
 % terminal constraint on terminal velocity from precomputed DP
 constraints = [constraints 0 <= x(2,Np+1) <= limspeed_(xbar(1,Np+1))];  % (11k)
 % terminal constraint on distance
-constraints = [constraints d_min <= d(Np+1) ...  % (11l)
-                d_min <= d(Np+1) + (xbar_l(2,Np+1))^2/(2*a_l) - (x(2:Np+1)^2/(2*a_f))];  % (11m)
+constraints = [constraints d_min <= xbar_l(1,Np+1) - x(1,Np+1) - L ...  % (11l)
+                d_min <= xbar_l(1,Np+1) - x(1,Np+1) - L + (xbar_l(2,Np+1))^2/(2*a_l) - (x(2,Np+1)^2/(2*a_f))];  % (11m)
 %% Optimize
 options = sdpsettings('verbose',1,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
     'fmincon.MaxFunEvals',500000);

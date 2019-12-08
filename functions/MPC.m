@@ -89,7 +89,7 @@ while xOpt_l(1,end) < p_sampled(1,end)
 
         % execute finite time horizon optimization for following train
         [feas_f_t, xOpt_f_t, uOpt_f_t, JOpt_f_t] = cftoc_followingTrain(x0_f, ... 
-            xbar_f, ubar_f, xOpt_l_t, uOpt_l_t, MODEL, param, slope_,radius_,limspeed_,maxspeed_) ;
+            xbar_f, ubar_f, xOpt_l_t(:,1), uOpt_l_t, MODEL, param, slope_,radius_,limspeed_,maxspeed_) ;
  
        if feas_f_t ~= 1
             xOpt_l = [];
