@@ -10,7 +10,7 @@ function [vlim]= limspeed(s,p_sampled,vOpt_DP)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % use linear interpolation for velocity
-vel = @(v) interp1(p_sampled,vOpt_DP,v,'linear');
+vel = @(v) interp1(p_sampled,vOpt_DP,v,'previous');
 vlim = vel(s);
 
 
