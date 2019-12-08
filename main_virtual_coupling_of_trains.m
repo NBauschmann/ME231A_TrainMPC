@@ -50,34 +50,23 @@ radius_ = @(v) interp1(profile(:,1),profile(:,3),v,'previous');
 limspeed_ = @(v) interp1(p_sampled,vOpt_DP,v,'previous');
 maxspeed_ = @(v) 1/3.6 * interp1(veloc(:,1),veloc(:,2),v,'previous');
 
+% this could be brought to setup_param
 
-%% check CFTOC solution
+%% perform MPC
 if MODEL == paper
     % initial state
-    x0 = [0;0.1;0] ;
+    x0_l = [60;0.1;0] ;
+    x0_f = [0;0.1;0] ;
 
-    % apriori estimation
-    uOpt0 = 1e+05*ones(1,param.Np);
-    xt = x0;
-    [xbar, ubar] = a_priori_estimation(xt,uOpt0,param,MODEL,...
-        slope_,radius_,limspeed_,maxspeed_); 
-    
-
-    [feas_l, xOpt_l, uOpt_l, JOpt_l] = cftoc_leadingTrain(x0, ... 
-       xbar, ubar, MODEL, param, slope_,radius_,limspeed_,maxspeed_)
 elseif MODEL == midterm
-    x0 = [0;0.1] ;
+    % initial condition
+    x0_l = [60;0.1] ;
+    x0_f = [0;0.1] ;
 
-    % apriori estimation
-    uOpt0 = 0*1e+05*ones(1,param.Np);
-    xt = x0;
-    [xbar, ubar] = a_priori_estimation(xt,uOpt0,param,MODEL,...
-        slope_,radius_,limspeed_,maxspeed_); 
-    
-
-    [feas_l, xOpt_l, uOpt_l, JOpt_l] = cftoc_leadingTrain(x0, ... 
-       xbar, ubar, MODEL, param, slope_,radius_,limspeed_,maxspeed_)
 end
+
+[feas, xOpt, uOpt, predErr] = MPC(x0_l, x0_f,param,MODEL,...
+        slope_,radius_,limspeed_,maxspeed_,p_sampled);
 
 
 
