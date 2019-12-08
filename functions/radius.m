@@ -20,7 +20,7 @@ function r= radius(X)
 
 
 % alternative way: use linear interpolation for slope
-rad = @(v) interp1(profile(:,1),profile(:,3),v,'linear');
+rad = @(v) interp1(profile(:,1),profile(:,3),v,'previous');
 r = rad(X);
 end
 

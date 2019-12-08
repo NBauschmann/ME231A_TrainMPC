@@ -18,7 +18,7 @@ function s = slope(X)
 %%%%%%%%%%%%%%%
 
 % alternative way: use linear interpolation for slope
-slope = @(v) 0.001 * interp1(profile(:,1),profile(:,2),v,'linear');
+slope = @(v) 0.001 * interp1(profile(:,1),profile(:,2),v,'previous');
 s = slope(X);
 
 % using spline

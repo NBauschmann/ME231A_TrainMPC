@@ -29,7 +29,7 @@ paper = 0 ;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % choose midterm or paper model
-MODEL = midterm ;
+MODEL = paper ;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -48,7 +48,7 @@ load DP_results
 %% check CFTOC solution
 if MODEL == paper
     % initial state
-    x0 = [0;0;0] ;
+    x0 = [0;0.1;0] ;
 
     % apriori estimation
     uOpt0 = 1e+05*ones(1,param.Np);
@@ -59,7 +59,7 @@ if MODEL == paper
     [feas_l, xOpt_l, uOpt_l, JOpt_l] = cftoc_leadingTrain(x0, ... 
        xbar, ubar, MODEL, param, p_sampled, vOpt_DP)
 elseif MODEL == midterm
-  x0 = [0;0.1] ;
+    x0 = [0;0.1] ;
 
     % apriori estimation
     uOpt0 = 0*1e+05*ones(1,param.Np);
