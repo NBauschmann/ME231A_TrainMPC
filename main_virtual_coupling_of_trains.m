@@ -55,13 +55,13 @@ maxspeed_ = @(v) 1/3.6 * interp1(veloc(:,1),veloc(:,2),v,'previous');
 %% perform MPC
 if MODEL == paper
     % initial state
-    x0_l = [60;0.1;0] ;
-    x0_f = [0;0.1;0] ;
+    x0_l = [60;10;0] ;
+    x0_f = [0;10;0] ;
 
 elseif MODEL == midterm
     % initial condition
-    x0_l = [60;0.1] ;
-    x0_f = [0;0.1] ;
+    x0_l = [60;10] ;
+    x0_f = [0;10] ;
 
 end
 
