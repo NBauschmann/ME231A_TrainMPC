@@ -108,17 +108,11 @@ elseif MODEL == midterm
     % weights in cost functions
     param.Kv_l = 100 ;
     param.Kj_l = 0.5 ;
-    param.Kd = blkdiag(100,25,0);
+    param.Kd = 100;  % {100,25,0}
     param.Kv_f = 0.5 ;
     param.Kj_f = 0.5 ;
     param.Kv_DP = 1.0 ;
     param.Kl_DP = 1.0e+05 ;
-    
-    
-    
-    
-    
-    
 end
 
 
