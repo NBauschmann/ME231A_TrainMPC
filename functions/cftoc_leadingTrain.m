@@ -41,7 +41,7 @@ if MODEL == midterm
     % define objective function
     objective = 0 ;
     
-    for k = 1:Np
+    for k = 1:Np+1
         % objective = objective + Kv_l * norm(x(2,k) - maxspeed_(xbar(1,k)));     
         objective = objective + Kv_l * norm(x(2,k) - maxspeed_(x(1,k)));   % used in paper  
         % here the estimated state (position) is used... (deviation from
@@ -50,7 +50,7 @@ if MODEL == midterm
     end
     
     % define constraints
-    constraints = [];
+    constraints = [x(:,1) == x0];
     for i = 1:Np
     constraints = [constraints x(:,i+1) == train_dynamics_midterm(x(:,i), u(1,i), param,slope_,radius_,limspeed_,maxspeed_)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
         0 <= x(2,i+1) <= maxspeed_(xbar(1,i+1)) ...
@@ -107,7 +107,7 @@ elseif MODEL == paper
     % define objective function
     objective = 0 ;
     
-    for k = 1:Np
+    for k = 1:Np+1
         % objective = objective + Kv_l * norm(x(2,k) - maxspeed(xbar(1,k)));     
         objective = objective + Kv_l * norm(x(2,k) - maxspeed_(x(1,k)));   % used in paper  
         % here the estimated state (position) is used... (deviation from
@@ -119,7 +119,7 @@ elseif MODEL == paper
     end
     
     % define constraints
-    constraints = [];
+    constraints = [x(:,1) == x0];
     for i = 1:Np
     constraints = [constraints x(:,i+1) == train_dynamics(x(:,i), u(1,i), param,slope_,radius_,limspeed_,maxspeed_)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
         0 <= x(2,i+1) <= maxspeed_(xbar(1,i+1)) ...
