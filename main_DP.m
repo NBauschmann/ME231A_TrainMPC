@@ -37,8 +37,9 @@ clear all; close all
 addpath('data','functions')
 %% Load parameters
 load train_data_midterm
-parameters();   % overwrites param struct from midterm data 
 
+param = setup_parameters(0);  % overwrites param struct from midterm data 
+                                 % 0 for paper, 1 for midterm data
 A = param.A;
 B = param.B;
 C = param.C;
@@ -203,9 +204,26 @@ ylabel('maxspeed')
 v = 20;
 s = 1100; % slope is zero here, maxspeed is 23.6111
 u = 0; % umin: -147936; umax: 144720
+comp_u = @(v,v_next,s)   A + B*v + C*v^2 - M*g*slope(s) - ...
+    (v_next^2 - v^2)*M /(2*ds);
+comp_v_next = @(v,u,s) real(sqrt(v^2 + 2*ds*(-A -B*v -C*v^2 + M*g*slope(s) - u) / M));
+
 
 v_next = comp_v_next(v,u,s)
 
 u_backwards = comp_u(v,v_next,s)
 
+%% 
+
+comp_u_test = @(v_next)   A + B*v + C*v.^2 - M*g*slope(s) - ...
+    (v_next.^2 - v.^2)*M /(2*ds);
+
+comp_v_next_test = @(u) real(sqrt(v^2 + 2*ds*(-A -B*v -C*v.^2 + M*g*slope(s) - u) / M));
+
+u = linspace(u_min, u_max, 1000);
+v_next = linspace(0.1, 26, 1000);
+figure
+plot(u,comp_v_next_test(u))
+figure
+plot(v_next,comp_u_test(v_next))
 

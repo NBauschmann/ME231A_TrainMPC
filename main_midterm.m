@@ -5,7 +5,7 @@ clear all
 close all
 clc
 
-%% Dynamic Programming ? Train Control 
+%% Dynamic Programming - Train Control 
 %% Author: Francesco Borrelli 2017(c) 
 %% set up path
 addpath('data','functions')
@@ -40,7 +40,7 @@ v_idx_set = 1:N_v;
 comp_v_next = @(v,u,p) v+dp/(v*M)*(-A-B*v-C*v^2-M*g*slope(p)-M*6/radius(p)+u); 
 
 %% This funtion computes the input to bring speed v to speed v next 
-% at position 
+% at position p
 p_comp_u = @(v,v_next,p) M*(v_next-v)/(dp)*v-(-A-B*v-C*v^2-M*g*slope(p)-M*6/radius(p)); 
 
 %% Define stage 
