@@ -3,7 +3,7 @@ function [feas_f, xOpt_f, uOpt_f, JOpt_f] = cftoc_followingTrain(x0, ...
 %% solves CFTOC problem for the leading train
 %% Inputs
 % x0        initial state
-% xbar      vector containing the estimated states, a priori estimatio
+% xbar      vector containing the estimated states, a priori estimation
 % ubar      vector containing the inputs used for the estimation
 % xleader   leader state at time t (only first one needed!)
 %           First scenario: the follower gets the leader state (s,v) at 
@@ -37,6 +37,11 @@ midterm = 1 ;
 paper = 0 ;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%% MODEL == midterm %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if MODEL == midterm
 %% extract paramters 
 Kv_f = param.Kv_f; % gain for penalizing deviation from max speed
@@ -46,6 +51,9 @@ Np = param.Np;  % MPC horizon
 g = param.g;
 d_des = param.d_des;  % desired distance to leader
 d_min = param.d_min;
+a_l = param.a_l; % max accelerations for terminal constraint on distance
+a_f = param.a_f; % -> have to tune this
+                 % (or leave out this constraint)
 %% define optimization variable for state
 x = sdpvar(2,Np+1);
 assign(x(:,1),x0);
@@ -54,12 +62,15 @@ u = sdpvar(1,Np);
 %% define objective function
 objective = 0;
 % initialize distance to leader in each time step
-d = zeros(Np);
-xbar_l = zeros(2,Np);
+d = zeros(Np+1);
+xbar_l = zeros(2,Np+1);
 xbar_l(:,1) = xleader;
-for k = 1:Np   
-    if k>1  % propagate leader states
-        xbar_l(:,k) = train_dynamics_midterm(xbar_l(:,k-1),uoptleader(:,k));
+for k = 1:Np+1 % sum from t to t+Np, because of matlab indexing -> from 1 to Np+1  
+    if k < Np+1 % propagate leader states
+        xbar_l(:,k+1) = train_dynamics_midterm(xbar_l(:,k),uoptleader(1,k),...
+            param,slope_,radius_,limspeed_,maxspeed_); 
+        % the leader's optimal control input could be computed by optimizing 
+        % using the measured (and stored) last state of the leader  
     end
     d(k) = x(1,k) - xbar_l(1,k) - L;  % current distance to leader
     objective = objective + Kd * norm(d(k) - d_des) + ...
@@ -67,22 +78,26 @@ for k = 1:Np
 end
 %% define constraints
 constraints = [];
-for i = 1:Np
-constraints = [constraints x(:,i+1) == train_dynamics_midterm(x(:,i),...
-        u(1,i),param,slope_,radius_,limspeed_,maxspeed_)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
-    0 <= x(2,i+1) <= maxspeed_(xbar(1,i+1)) ...
-    d_min <= d(i) ...
-    -M * g * param.mumax  <= u(1,i) <= M * g * param.mumax]; 
+for i = 1:Np % constraints for time steps t to t+Np-1, have terminal constraints for timestep t+Np
+    constraints = [constraints x(:,i+1) == train_dynamics_midterm(x(:,i),...  % (11d)
+        u(1,i),param,slope_,radius_,limspeed_,maxspeed_)... % with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
+    d_min <= d(i) ...  % (11e)
+    0 <= x(2,i+1) <= maxspeed_(xbar(1,i+1)) ... % (11f)
+    % can't use (11g) without force in states
+    -M*g*param.mumax  <= u(1,i) <= M*g*param.mumax]; % midterm equivalent of (11h)
     %-Pbr <= x(2,i+1) * u(1,i) <= Pdr];
 end
-% terminal constriant, from precomputed DP
-constraints  = [constraints 0 <= x(2,Np+1) <= limspeed_(xbar(1,Np+1))];
-%%
+% initial constraint
+constraints = [constraints x0 == x(:,1)];  % (11j)
+% terminal constraint on terminal velocity from precomputed DP
+constraints = [constraints 0 <= x(2,Np+1) <= limspeed_(xbar(1,Np+1))];  % (11k)
+% terminal constraint on distance
+constraints = [constraints d_min <= d(Np+1) ...  % (11l)
+                d_min <= d(Np+1) + (xbar_l(2,Np+1))^2/(2*a_l) - (x(2:Np+1)^2/(2*a_f))];  % (11m)
+%% Optimize
 options = sdpsettings('verbose',1,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
     'fmincon.MaxFunEvals',500000);
-
 sol = optimize(constraints, objective, options);
-
 error = sol.problem;
 
 if error == 0
@@ -91,63 +106,80 @@ if error == 0
     xOpt_f = double(x);
     uOpt_f = double(u);
     JOpt_f = double(objective);
-
 else
     feas_f = 0;
     xOpt_f = [];
     uOpt_f = [];
     JOpt_f = [];
-    
 end % model == midterm
 %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%% MODEL == paper %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % model selection
-elseif MODEL == paper
-
-% paramters 
-delta_t = param.delta_t ;
-Kv_l = param.Kv_l ;
-Kj_l = param.Kj_l ;
-M = param.M ;
-Np = param.Np ;
-jmax = param.jmax ;
-abr = param.abr ;
-adr = param.adr ; 
-Pbr = param.Pbr ;
-Pdr = param.Pdr ;
-
-
-% define optimization variable for state
+elseif MODEL == paper 
+%% get paramters 
+delta_t = param.delta_t;
+Kv_f = param.Kv_f; % gain for penalizing deviation from max speed
+Kj_f = param.Kj_f; % gain for penalizing jerk
+Kd = param.Kd;   % gain for penalizing deviation from desired distance
+M = param.M;
+Np = param.Np;
+jmax = param.jmax;
+abr = param.abr;
+adr = param.adr; 
+Pbr = param.Pbr;
+Pdr = param.Pdr;
+d_des = param.d_des;  % desired distance to leader
+d_min = param.d_min;
+a_l = param.a_l; % max accelerations for terminal constraint on distance
+a_f = param.a_f; % -> have to tune this
+                 % (or leave out this constraint)
+%% Define optimization variable for state
 x = sdpvar(3,Np+1);
 assign(x(:,1),x0);
-
-% define optimization variable for input 
+%% Define optimization variable for input 
 u = sdpvar(1,Np);
-
-% define objective function
-objective = 0 ;
-
-for k = 1:Np
-    % objective = objective + Kv_l * norm(x(2,k) - maxspeed(xbar(1,k)));     
-    objective = objective + Kv_l * norm(x(2,k) - maxspeed_(x(1,k)));   % used in paper  
-    % here the estimated state (position) is used... (deviation from
-    % paper, eq. 7a
-    % could function maxspeed would have to be adapted
+%% Define objective function
+objective = 0;
+% initialize distance to leader in each time step
+d = zeros(Np+1);
+xbar_l = zeros(3,Np+1);
+xbar_l(:,1) = xleader;
+for k = 1:Np+1  % sum from t to t+Np, because of matlab indexing -> from 1 to Np+1  
+    if k < Np+1 % propagate leader states
+        xbar_l(:,k+1) = train_dynamics(xbar_l(:,k),uoptleader(1,k),...
+            param,slope_,radius_,limspeed_,maxspeed_); 
+        % the leader's optimal control input could be computed by optimizing 
+        % using the measured (and stored) last state of the leader  
+    end
+    d(k) = x(1,k) - xbar_l(1,k) - L;  % current distance to leader
+    objective = objective + Kd * norm(d(k) - d_des) + ...
+        Kv_f * norm(x(2,k) - maxspeed_(x(1,k)));   % used in paper  
 end
 for k = 1:Np-1
-    objective = objective + Kj_l * norm((x(3,k+1) - x(3,k)) / (delta_t* M));     
+    % penalize jerk
+    objective = objective + Kj_l * norm((x(3,k+1) - x(3,k)) / (delta_t* M)); % (11c)     
 end
-
-% define constraints
+%% Define constraints
 constraints = [];
-for i = 1:Np
-constraints = [constraints x(:,i+1) == train_dynamics(x(:,i), u(1,i), param,slope_,radius_,limspeed_,maxspeed_)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
-    0 <= x(2,i+1) <= maxspeed_(xbar(1,i+1)) ...
-    -jmax <= (x(3,k+1) - x(3,k))/ (M * delta_t) <= jmax ....
-    -M * abr <= u(1,i) <= M * adr...
-    -Pbr <= x(2,i+1) * u(1,i) <= Pdr];
+for i = 1:Np  % constraints for time steps t to t+Np-1, have terminal constraints for timestep t+Np
+    constraints = [constraints x(:,i+1) == train_dynamics(x(:,i), u(1,i), param,slope_,radius_,limspeed_,maxspeed_)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
+    0 <= x(2,i+1) <= maxspeed_(xbar(1,i+1)) ... % (11f)
+    -jmax <= (x(3,k+1) - x(3,k))/ (M * delta_t) <= jmax ... %(11g)
+    -M * abr <= u(1,i) <= M * adr... % (11h)
+    -Pbr <= x(2,i+1) * u(1,i) <= Pdr];  % (11i)
 end
-constraints  = [constraints 0 <= x(2,Np+1) <= limspeed_(xbar(1,Np+1))];
-
+% initial constraint
+constraints = [constraints x0 == x(:,1)];  % (11j)
+% terminal constraint on terminal velocity from precomputed DP
+constraints = [constraints 0 <= x(2,Np+1) <= limspeed_(xbar(1,Np+1))];  % (11k)
+% terminal constraints on distance
+constraints = [constraints d_min <= d(Np+1) ...  % (11l)
+                d_min <= d(Np+1) + (xbar_l(2,Np+1))^2/(2*a_l) - (x(2:Np+1)^2/(2*a_f))];  % (11m)
+%% Optimize
 options = sdpsettings('verbose',1,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
     'fmincon.MaxFunEvals',5000000);
 
