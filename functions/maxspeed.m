@@ -21,7 +21,7 @@ global veloc
 %%%%%%%%%%%%%%
 
 % alternative way: use linear interpolation for velocity
-vel = @(v) interp1(veloc(:,1),veloc(:,2),v,'previous');
+vel = @(v) 1/3.6 * interp1(veloc(:,1),veloc(:,2),v,'previous');
 Vref = vel(x);
 end
 

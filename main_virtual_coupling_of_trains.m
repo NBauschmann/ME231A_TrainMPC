@@ -51,7 +51,7 @@ if MODEL == paper
     x0 = [0;0;0] ;
 
     % apriori estimation
-    uOpt0 = 00*ones(1,param.Np);
+    uOpt0 = 1e+05*ones(1,param.Np);
     xt = x0;
     [xbar, ubar] = a_priori_estimation(xt,uOpt0,param,MODEL); 
     %
@@ -59,10 +59,10 @@ if MODEL == paper
     [feas_l, xOpt_l, uOpt_l, JOpt_l] = cftoc_leadingTrain(x0, ... 
        xbar, ubar, MODEL, param, p_sampled, vOpt_DP)
 elseif MODEL == midterm
-  x0 = [0;0] ;
+  x0 = [0;0.1] ;
 
     % apriori estimation
-    uOpt0 = 00*ones(1,param.Np);
+    uOpt0 = 0*1e+05*ones(1,param.Np);
     xt = x0;
     [xbar, ubar] = a_priori_estimation(xt,uOpt0,param,MODEL); 
     

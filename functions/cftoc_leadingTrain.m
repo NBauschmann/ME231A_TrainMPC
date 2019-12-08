@@ -57,8 +57,9 @@ if MODEL == midterm
         -M * g * param.mumax  <= u(1,i) <= M * g * param.mumax]; 
         %-Pbr <= x(2,i+1) * u(1,i) <= Pdr];
     end
+    %constraints  = [constraints 0 <= x(2,Np+1) <= limspeed(x(1,Np+1),p_sampled ,vOpt_DP)];
     constraints  = [constraints 0 <= x(2,Np+1) <= limspeed(xbar(1,Np+1),p_sampled ,vOpt_DP)];
-    
+
     options = sdpsettings('verbose',1,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
         'fmincon.MaxFunEvals',500000);
     
