@@ -94,7 +94,15 @@ elseif MODEL == midterm
     param.X0 = 0;
     % 
     param.mumax = 0.09 ; 
-
+    
+    % needed for constraint on distance for following train
+    % max acceleration of leader train -> TO BE TUNED
+    param.a_l = 1.25;
+    % max acceleration of following train -> TO BE TUNED 
+    param.a_f = 1.0;
+    % -> why not both the same?
+    
+    
     % MPC parameters
 
     % time step
