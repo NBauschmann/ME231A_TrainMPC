@@ -16,7 +16,7 @@
 %  - try different gains for stage cost (defined in setup_parameters)
 %         -> Kl_DP and Kv_DP
 %  - Need to change final constraints and final cost
-%    -> what should v_final be? 0? -> would need to adjust constraints on v
+%     -> what should v_final be? 0?
 
 %%
 clear all; close all
@@ -41,47 +41,37 @@ Kl_DP = param.Kl_DP;
 Fmax0 = param.mumax*M*g; 
 umin = -Fmax0; 
 umax = Fmax0;
+
 %% Grid the independent variable (same as gridding time)
 track_length = profile(end,1); % in meters
 ds = 10; % sampling in space
 s_sampled = 0:ds:track_length; % sampled train position
 N_s = length(s_sampled);
-%% Save maxspeed, slope and radius for all sampled positions in array
-% To avoid using functions for maxspeed, radius, slope
-maxspeeds = []; slopes = []; radiuss = [];
-for s = s_sampled
-    maxspeeds = [maxspeeds maxspeed(s)];
-    slopes = [slopes slope(s)];
-    radiuss = [radiuss radius(s)];
-end
+
 %% Grid the state space
 v_min = 0.1;
 dv = 0.1;
 % grid from 0.1 to the max speed over the track at any s
-v_sampled = v_min:dv:max(maxspeeds); 
+v_sampled = v_min:dv:max(maxspeed(s_sampled)); 
 N_v = length(v_sampled);
 v_idx_set = 1:N_v;
 %% Grid the input space
 % dynamic input grid, umax and umin are calculated according to v for each
 % step
 N_u = 10;
-%% This funtion computes the next speed given the current speed, input and 
-% index of position -> looks up slope and radius  
-comp_v_next = @(v,u,s_idx) v+ds/(v*M)*(-A-B*v-C*v^2-M*g*slopes(s_idx)...
-    - M*6/radiuss(s_idx)+u); 
+%% This funtion computes the next speed given the current speed, input and position 
+comp_v_next = @(v,u,s) v+ds/(v*M)*(-A-B*v-C*v^2-M*g*slope(s)-M*6/radius(s)+u); 
 
 %% This funtion computes the input to bring speed v to speed v next 
 % at position s
-comp_u = @(v,v_next,s_idx) M*(v_next-v)/(ds)*v ...
-    - (-A-B*v-C*v^2-M*g*slopes(s_idx)-M*6/radiuss(s_idx)); 
+comp_u = @(v,v_next,s) M*(v_next-v)/(ds)*v-(-A-B*v-C*v^2-M*g*slope(s)-M*6/radius(s)); 
 
 %% Define stage cost
 % Jstage = @(v,u) ds/v;  % from midterm
-Jstage = @(v,u,s_idx) norm(v - maxspeeds(s_idx)) * Kv_DP + ...
-    norm((v - maxspeeds(s_idx)) + abs(v - maxspeeds(s_idx))) * Kl_DP;
+Jstage = @(v,u,s) norm(v - maxspeed(s)) * Kv_DP + ...
+    norm((v - maxspeed(s)) + abs(v - maxspeed(s))) * Kl_DP;
 
 %% Initialization of Cost-to-Go
-% TODO
 for i = v_idx_set
     if v_sampled(i) > maxspeed(s_sampled(N_s))
         J(N_s,i) = inf;
@@ -109,12 +99,12 @@ for s_indx = N_s-1:-1:1
         v = v_sampled(i);
         Jbest = inf; 
         Ubest = nan;
-        um = comp_u(v,v_min,s_indx);
-        uM = comp_u(v,maxspeeds(s_indx + 1),s_indx);
+        um = comp_u(v,v_min,s);
+        uM = comp_u(v,maxspeed(s+ds),s);
         for u_grid = linspace(max(umin,um),min(umax,uM),N_u)
-            v_next = comp_v_next(v,u_grid,s_indx);
-            if v_next>=v_min && v_next<=maxspeeds(s_indx + 1)
-                Jactual = Jstage(v,u_grid,s_indx) + Jopt{s_indx+1}(v_next);
+            v_next = comp_v_next(v,u_grid,s);
+            if v_next>=v_min && v_next<=maxspeed(s + ds)
+                Jactual = Jstage(v,u_grid,s) + Jopt{s_indx+1}(v_next);
                 if ~isnan(Jactual)
                     if Jactual<Jbest
                         Jbest = Jactual;
@@ -123,7 +113,7 @@ for s_indx = N_s-1:-1:1
                 end % ~isnan
             end % v inside constraints
         end % loop over u
-        if v>maxspeeds(s_indx)  % should not be necessary
+        if v>maxspeed(s)  % should not be necessary
             Jbest = inf;
             Ubest = nan;
         end
@@ -145,21 +135,23 @@ vOpt(1,1) = v_min;
 
 for i = 1:N_s-1
     uOpt(i) = Uopt{i}(vOpt(:,i));
-    vOpt(:,i+1) = comp_v_next(vOpt(:,i),uOpt(:,i),i);
+    vOpt(:,i+1) = comp_v_next(vOpt(:,i),uOpt(:,i),s_sampled(i));
 end
 
 % plotting
 figure
 subplot(3,1,1)
-plot(s_sampled,maxspeeds,s_sampled,vOpt)
+plot(s_sampled,maxspeed(s_sampled),s_sampled,vOpt)
 legend('vmax','actual velocity')
-xlabel('position')
-ylabel('velocity')
 subplot(3,1,2)
 plot(s_sampled(1:end-1),uOpt)
 xlabel('position')
 ylabel('Optimal Control')
+slopes = [];
 subplot(3,1,3)
+for s = s_sampled
+    slopes = [slopes slope(s)];
+end
 plot(s_sampled,slopes)
 xlabel('position')
 ylabel('slope')
