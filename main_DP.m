@@ -19,7 +19,7 @@
 %
 % Should not be a problem though, because this file gets executed *only
 % once* to save the optimal speed profile.
-
+%
 % ISSUES/TODO:
 % - backwards computation of u given v and v_next based on trapezoidal
 % formula from paper does not work yet.
@@ -28,6 +28,9 @@
 % - When (eventually) using paper track data: this contains stops! Careful
 % with v_min in this case -> needs to be 0 at stations!
 % (currently v_min = 0.1 as in midterm)
+%
+%  TODO: Actually save results -> differentiate between models
+%
 
 clear all; close all
 %% Set path

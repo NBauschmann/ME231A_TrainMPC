@@ -17,7 +17,9 @@
 %         -> Kl_DP and Kv_DP
 %  - Need to change final constraints and final cost
 %     -> what should v_final be? 0?
-
+%
+%  TODO: Actually save results -> differentiate between models
+%
 %%
 clear all; close all
 %% Set path
