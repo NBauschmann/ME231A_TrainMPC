@@ -21,16 +21,13 @@
 % once* to save the optimal speed profile.
 
 % ISSUES/TODO:
-% - Do not have track data from paper, system params in paper and midterm
-% are different -> atm param from midterm data is overwritten when
-% parameters() is called
-% - When (eventually) using paper track data: this contains stops! Careful
-% with v_min in this case -> needs to be 0 at stations!
-% (currently v_min = 0.1 as in midterm)
 % - backwards computation of u given v and v_next based on trapezoidal
 % formula from paper does not work yet.
 % -> TODO: check reasoning behind trapezoidal formula, think of other ways
 % to grid over u if this does not work
+% - When (eventually) using paper track data: this contains stops! Careful
+% with v_min in this case -> needs to be 0 at stations!
+% (currently v_min = 0.1 as in midterm)
 
 clear all; close all
 %% Set path
@@ -45,8 +42,6 @@ B = param.B;
 C = param.C;
 M = param.M;
 g = param.g;
-
-
 %% Define state and input constraints
 u_min = -param.M * param.abr;
 u_max = param.M * param.adr;
@@ -200,7 +195,8 @@ subplot(2,1,2)
 plot(s_sampled,maxspeeds)
 xlabel('position')
 ylabel('maxspeed')
-%%
+
+%% Debugging
 v = 20;
 s = 1100; % slope is zero here, maxspeed is 23.6111
 u = 0; % umin: -147936; umax: 144720
@@ -209,21 +205,28 @@ comp_u = @(v,v_next,s)   A + B*v + C*v^2 - M*g*slope(s) - ...
 comp_v_next = @(v,u,s) real(sqrt(v^2 + 2*ds*(-A -B*v -C*v^2 + M*g*slope(s) - u) / M));
 
 
-v_next = comp_v_next(v,u,s)
-
-u_backwards = comp_u(v,v_next,s)
+v_next = comp_v_next(v,u,s);
+u_backwards = comp_u(v,v_next,s);
 
 %% 
 
-comp_u_test = @(v_next)   A + B*v + C*v.^2 - M*g*slope(s) - ...
-    (v_next.^2 - v.^2)*M /(2*ds);
+comp_u_test = @(v_next) A + B*v + C*v^2 - M*g*slope(s) - (v_next.^2 - v^2)*M /(2*ds);
 
-comp_v_next_test = @(u) real(sqrt(v^2 + 2*ds*(-A -B*v -C*v.^2 + M*g*slope(s) - u) / M));
+comp_v_next_test = @(u) sqrt(v^2 + 2*ds*(-A -B*v -C*v^2 + M*g*slope(s) - u) / M);
 
 u = linspace(u_min, u_max, 1000);
 v_next = linspace(0.1, 26, 1000);
 figure
+grid on; hold on
+title(['comp v next for v=', num2str(v), ' , s=', num2str(s)])
+% plot(-10e6:1000:10e6,comp_v_next_test(-10e6:1000:10e6))
 plot(u,comp_v_next_test(u))
-figure
-plot(v_next,comp_u_test(v_next))
+xlabel('u')
+ylabel('v next')
 
+figure
+grid on; hold on
+title(['comp u for v=', num2str(v), ' , s=', num2str(s)])
+plot(v_next,comp_u_test(v_next))
+xlabel('v next')
+ylabel('u')
