@@ -8,12 +8,14 @@
 % Midterm and Paper use different models
 %
 % TO DO:
-% Paper Model: - CFTOC init state violates boundary
-%              - fmincon runs for a very long time and 
-%                converges to an nonfeasible point
-%                -> use DP instead???
-% For Midterm Model: - CFTOC has to be implemented
-%          - MPC
+%     - CFTOC init state violates boundary
+%          -> WHY???
+%     - fmincon runs for a very long time 
+%          -> find run time improvements
+%     - write plotting functions, etc. 
+%     - implement initial DP for paper model
+% For Midterm Model: 
+%          - MPC is running and tested, takes a long time
 % ....
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clear all

@@ -57,9 +57,10 @@ a_f = param.a_f; % -> have to tune this
 L = param.L ; % length of trains
 %% define optimization variable for state
 x = sdpvar(2,Np+1);
-assign(x(:,1),x0);
+assign(x,xbar);
 %% define optimization variable for input 
 u = sdpvar(1,Np);
+assign(u,ubar);
 %% define objective function
 objective = 0;
 % initialize distance to leader in each time step
@@ -96,8 +97,8 @@ constraints = [constraints 0 <= x(2,Np+1) <= limspeed_(xbar(1,Np+1))];  % (11k)
 constraints = [constraints d_min <= xbar_l(1,Np+1) - x(1,Np+1) - L ...  % (11l)
                 d_min <= xbar_l(1,Np+1) - x(1,Np+1) - L + (xbar_l(2,Np+1))^2/(2*a_l) - (x(2,Np+1)^2/(2*a_f))];  % (11m)
 %% Optimize
-options = sdpsettings('verbose',1,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
-    'fmincon.MaxFunEvals',500000);
+options = sdpsettings('verbose',0,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
+        'fmincon.MaxFunEvals',5000000,'fmincon.TolFun',1e-05,'fmincon.TolFunValue',1e-05);
 sol = optimize(constraints, objective, options);
 error = sol.problem;
 
@@ -140,9 +141,10 @@ a_f = param.a_f; % -> have to tune this
                  % (or leave out this constraint)
 %% Define optimization variable for state
 x = sdpvar(3,Np+1);
-assign(x(:,1),x0);
+assign(x,xbar);
 %% Define optimization variable for input 
 u = sdpvar(1,Np);
+assign(u,ubar);
 %% Define objective function
 objective = 0;
 % initialize distance to leader in each time step
@@ -181,8 +183,8 @@ constraints = [constraints 0 <= x(2,Np+1) <= limspeed_(xbar(1,Np+1))];  % (11k)
 constraints = [constraints d_min <= d(Np+1) ...  % (11l)
                 d_min <= d(Np+1) + (xbar_l(2,Np+1))^2/(2*a_l) - (x(2:Np+1)^2/(2*a_f))];  % (11m)
 %% Optimize
-options = sdpsettings('verbose',1,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
-    'fmincon.MaxFunEvals',5000000);
+    options = sdpsettings('verbose',0,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
+        'fmincon.MaxFunEvals',5000000,'fmincon.TolFun',1e-05,'fmincon.TolFunValue',1e-05);
 
 sol = optimize(constraints, objective, options);
 

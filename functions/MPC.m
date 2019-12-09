@@ -37,6 +37,10 @@ function [feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f] = MPC(x0_l, x0_f,param,
 % end
 % ( currently not needed ) 
 
+% turns off fmincon warning
+warning('off','MATLAB:nearlySingularMatrix')
+
+
 % initialisation of storage vectors
 feas_l = [] ;
 feas_f = [] ;
@@ -54,14 +58,14 @@ x_pred_f = [] ;
 % predErr_f = zeros(nx,1);
 
 % initialisation for apriori estimation before first step
-uOpt_l_t = 10e+05*ones(1,param.Np) ;
-uOpt_f_t = 10e+05*ones(1,param.Np) ;
+uOpt_l_t = 1.8449e+05*ones(1,param.Np) ;
+uOpt_f_t = 1.8449e+05*ones(1,param.Np) ;
 
 % indicator of MPC iteration
 i = 1 ;
 
 while xOpt_l(1,end) < p_sampled(1,end)
-
+    tic
     % apriori estimation
     [xbar_l, ubar_l] = a_priori_estimation(x0_l, uOpt_l_t, param, MODEL, ...
         slope_, radius_, limspeed_, maxspeed_);
@@ -112,9 +116,15 @@ while xOpt_l(1,end) < p_sampled(1,end)
             x_pred_f{i} = xOpt_f_t ;
 
        end
-    
+    disp('MPC iteration')
+    disp(i)
+    disp('leading train position')
+    disp(x0_l)
+    disp('optimal control input')
+    disp(uOpt_l(1))
     % next MPC step   
     i = i + 1 ;
+    toc
     
     end
     
