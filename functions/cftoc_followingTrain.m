@@ -98,7 +98,7 @@ constraints = [constraints d_min <= xbar_l(1,Np+1) - x(1,Np+1) - L ...  % (11l)
                 d_min <= xbar_l(1,Np+1) - x(1,Np+1) - L + (xbar_l(2,Np+1))^2/(2*a_l) - (x(2,Np+1)^2/(2*a_f))];  % (11m)
 %% Optimize
 options = sdpsettings('verbose',0,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
-        'fmincon.MaxFunEvals',5000000,'fmincon.TolFun',1e-05,'fmincon.TolFunValue',1e-05);
+        'fmincon.MaxFunEvals',5000000,'fmincon.TolFun',1e-06,'fmincon.TolFunValue',1e-06);
 sol = optimize(constraints, objective, options);
 error = sol.problem;
 
