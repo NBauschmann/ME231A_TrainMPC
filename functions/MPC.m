@@ -1,4 +1,4 @@
-function [feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f] = MPC(x0_l, x0_f,param,MODEL,...
+function [feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f, u_pred_l, u_pred_f] = MPC(x0_l, x0_f,param,MODEL,...
         slope_,radius_,DPspeed_,maxspeed_,p_sampled)
     
 %% performs MPC
@@ -53,6 +53,8 @@ uOpt_f = [] ;
 
 x_pred_l = [] ;
 x_pred_f = [] ;
+u_pred_l = [] ;
+u_pred_f = [] ;
 
 % predErr_l = zeros(nx,1);
 % predErr_f = zeros(nx,1);
@@ -90,7 +92,10 @@ while xOpt_l(1,end) < p_sampled(1,end)
         break;
    else
        feas_l = [feas_l, true];
+       % store current prediction
        x_pred_l{i} = xOpt_l_t ;
+       u_pred_l{i} = uOpt_l_t ;
+
 
         % execute finite time horizon optimization for following train
         [feas_f_t, xOpt_f_t, uOpt_f_t, JOpt_f_t] = cftoc_followingTrain(x0_f, ... 
@@ -108,13 +113,18 @@ while xOpt_l(1,end) < p_sampled(1,end)
             break;
        else
             feas_f = [feas_f, true];
+            % optimal closed loop trajectory
             xOpt_l = [xOpt_l, xOpt_l_t(:,2)];
             xOpt_f = [xOpt_f, xOpt_f_t(:,2)];
             uOpt_l = [uOpt_l, uOpt_l_t(1,1)];
             uOpt_f = [uOpt_f, uOpt_f_t(1,1)];
+            % new initial position
             x0_l = xOpt_l_t(:,2) ;
             x0_f = xOpt_f_t(:,2) ;
+            % store current prediction
             x_pred_f{i} = xOpt_f_t ;
+            u_pred_f{i} = uOpt_f_t ;
+
 
        end
     disp('MPC iteration')

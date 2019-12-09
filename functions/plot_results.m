@@ -1,4 +1,4 @@
-function plot_results(feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f, p_sampled, DPspeed_)
+function plot_results(feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f, p_sampled, DPspeed_, maxspeed_)
 
 %% plot closed loop trajectory
 % figure()
@@ -20,11 +20,13 @@ hold on
 plot(x_pred_l{end}(1,:),x_pred_l{end}(2,:),'bo')
 hold on
 plot(p_sampled,DPspeed_(p_sampled))
+hold on
+plot(p_sampled,maxspeed_(p_sampled))
 grid on
 xlabel('position [m]')
 ylabel('velocity [m/s]')
 title('Closed Loop Trajectory')
-legend('Leading Train','last prediction','limspeed')
+legend('Leading Train','last prediction','DPspeed','maxspeed')
 
 
 

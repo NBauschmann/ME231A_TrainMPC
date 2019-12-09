@@ -1,4 +1,4 @@
-function [feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f] = MPC_leadingTrain(x0_l, x0_f,param,MODEL,...
+function [feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f, u_pred_l, u_pred_f] = MPC_leadingTrain(x0_l, x0_f,param,MODEL,...
         slope_,radius_,DPspeed_,maxspeed_,p_sampled)
     
 %% performs MPC
@@ -40,7 +40,8 @@ function [feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f] = MPC_leadingTrain(x0_l
 % turns off fmincon warning
 warning('off','MATLAB:nearlySingularMatrix')
 
-x_pred_f = [];
+
+
 
 % initialisation of storage vectors
 feas_l = [] ;
@@ -53,7 +54,9 @@ uOpt_l = [] ;
 %uOpt_f = [] ;
 
 x_pred_l = [] ;
-%x_pred_f = [] ;
+x_pred_f = [] ;
+u_pred_l = [] ;
+u_pred_f = [] ;
 
 % predErr_l = zeros(nx,1);
 % predErr_f = zeros(nx,1);
@@ -67,7 +70,7 @@ i = 1 ;
 
 
 
-while xOpt_l(1,end) < p_sampled(1,end)
+while xOpt_l(1,end) < 1200 %p_sampled(1,end)
     tic
     % apriori estimation
     [xbar_l, ubar_l] = a_priori_estimation(x0_l, uOpt_l_t, param, MODEL, ...
@@ -95,6 +98,8 @@ while xOpt_l(1,end) < p_sampled(1,end)
    else
        feas_l = [feas_l, true];
        x_pred_l{i} = xOpt_l_t ;
+       u_pred_l{i} = uOpt_l_t ;
+
 
 %         % execute finite time horizon optimization for following train
 %         [feas_f_t, xOpt_f_t, uOpt_f_t, JOpt_f_t] = cftoc_followingTrain(x0_f, ... 
