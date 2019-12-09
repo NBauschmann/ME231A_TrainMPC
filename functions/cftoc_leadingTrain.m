@@ -57,7 +57,7 @@ if MODEL == midterm
     constraints = [x(:,1) == x0];
     for i = 1:Np
     constraints = [constraints x(:,i+1) == train_dynamics_midterm(x(:,i), u(1,i), param,slope_,radius_,limspeed_,maxspeed_)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
-        0 <= x(2,i+1) <= maxspeed_(xbar(1,i+1)) ...
+        0 <= x(2,i+1) <= limspeed_(xbar(1,i+1)) ... % normally maxspeed
         -M * g * param.mumax  <= u(1,i) <= M * g * param.mumax]; 
         %-Pbr <= x(2,i+1) * u(1,i) <= Pdr];
     end
@@ -79,6 +79,8 @@ if MODEL == midterm
         JOpt_l = double(objective);
     
     else
+        disp('The following error code occured (leading train)')
+        disp(error)
         feas_l = 0;
         xOpt_l = [];
         uOpt_l = [];
@@ -136,7 +138,7 @@ elseif MODEL == paper
     constraints  = [constraints 0 <= x(2,Np+1) <= limspeed_(xbar(1,Np+1))];
     
     options = sdpsettings('verbose',0,'usex0',1,'solver','fmincon','fmincon.MaxIter',500000,...
-        'fmincon.MaxFunEvals',5000000,'fmincon.TolFun',1e-05,'fmincon.TolFunValue',1e-05);
+        'fmincon.MaxFunEvals',5000000,'fmincon.TolFun',1e-06,'fmincon.TolFunValue',1e-06);
     
     sol = optimize(constraints, objective, options);
  

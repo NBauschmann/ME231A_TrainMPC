@@ -25,6 +25,7 @@
 %       - shorter prediction horizon
 %       - moving block
 %       - uncertainties in position, distance and line profile
+%       - soft - constraints
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clear all
 close all
@@ -65,21 +66,25 @@ maxspeed_ = @(v) 1/3.6 * interp1(veloc(:,1),veloc(:,2),v,'previous');
 %% perform MPC
 if MODEL == paper
     % initial state
-    x0_l = [60;10;0] ;
+    x0_l = [54;10;0] ;
     x0_f = [0;10;0] ;
 
 elseif MODEL == midterm
     % initial condition
-    x0_l = [80;10] ;
+    x0_l = [54;10] ;
     x0_f = [0;10] ;
 
 end
 
-[feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f] = MPC(x0_l, x0_f,param,MODEL,...
+% [feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f] = MPC(x0_l, x0_f,param,MODEL,...
+%         slope_,radius_,limspeed_,maxspeed_,p_sampled)
+
+[feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f] = MPC_leadingTrain(x0_l, x0_f,param,MODEL,...
         slope_,radius_,limspeed_,maxspeed_,p_sampled)
+    
 
+%%
 
-
-
+plot_results(feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f, p_sampled, limspeed_)
 
 
