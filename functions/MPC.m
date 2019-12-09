@@ -1,5 +1,5 @@
 function [feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f] = MPC(x0_l, x0_f,param,MODEL,...
-        slope_,radius_,limspeed_,maxspeed_,p_sampled)
+        slope_,radius_,DPspeed_,maxspeed_,p_sampled)
     
 %% performs MPC
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -70,13 +70,13 @@ while xOpt_l(1,end) < p_sampled(1,end)
     tic
     % apriori estimation
     [xbar_l, ubar_l] = a_priori_estimation(x0_l, uOpt_l_t, param, MODEL, ...
-        slope_, radius_, limspeed_, maxspeed_);
+        slope_, radius_, DPspeed_, maxspeed_);
     [xbar_f, ubar_f] = a_priori_estimation(x0_f, uOpt_f_t, param, MODEL, ...
-        slope_, radius_, limspeed_, maxspeed_);
+        slope_, radius_, DPspeed_, maxspeed_);
     
     % execute finite time horizon optimization
     [feas_l_t, xOpt_l_t, uOpt_l_t, JOpt_l_t] = cftoc_leadingTrain(x0_l, ... 
-       xbar_l, ubar_l, MODEL, param, slope_,radius_,limspeed_,maxspeed_) ;
+       xbar_l, ubar_l, MODEL, param, slope_,radius_,DPspeed_,maxspeed_) ;
     
    if feas_l_t ~= 1
         xOpt_l = [];
@@ -94,7 +94,7 @@ while xOpt_l(1,end) < p_sampled(1,end)
 
         % execute finite time horizon optimization for following train
         [feas_f_t, xOpt_f_t, uOpt_f_t, JOpt_f_t] = cftoc_followingTrain(x0_f, ... 
-            xbar_f, ubar_f, xOpt_l_t(:,1), uOpt_l_t, MODEL, param, slope_,radius_,limspeed_,maxspeed_) ;
+            xbar_f, ubar_f, xOpt_l_t(:,1), uOpt_l_t, MODEL, param, slope_,radius_,DPspeed_,maxspeed_) ;
  
        if feas_f_t ~= 1
             xOpt_l = [];

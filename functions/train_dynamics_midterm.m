@@ -1,4 +1,4 @@
-function x_ = train_dynamics_midterm(x, u, param, slope_,radius_,limspeed_,maxspeed_)
+function x_ = train_dynamics_midterm(x, u, param, slope_,radius_,DPspeed_,maxspeed_)
 %% calculates the system dynamics
 %% inputs
 % states x = [s(k), v(k), F(k)] at time k

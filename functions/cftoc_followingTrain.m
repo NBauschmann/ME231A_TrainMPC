@@ -1,5 +1,5 @@
 function [feas_f, xOpt_f, uOpt_f, JOpt_f] = cftoc_followingTrain(x0, ... 
-     xbar, ubar, xleader, uoptleader, MODEL, param, slope_,radius_,limspeed_,maxspeed_)
+     xbar, ubar, xleader, uoptleader, MODEL, param, slope_,radius_,DPspeed_,maxspeed_)
 %% solves CFTOC problem for the leading train
 %% Inputs
 % x0        initial state
@@ -70,7 +70,7 @@ xbar_l(:,1) = xleader;
 for k = 1:Np+1 % sum from t to t+Np, because of matlab indexing -> from 1 to Np+1  
     if k < Np+1 % propagate leader states
         xbar_l(:,k+1) = train_dynamics_midterm(xbar_l(:,k),uoptleader(1,k),...
-            param,slope_,radius_,limspeed_,maxspeed_); 
+            param,slope_,radius_,DPspeed_,maxspeed_); 
         % the leader's optimal control input could be computed by optimizing 
         % using the measured (and stored) last state of the leader  
     end
@@ -82,7 +82,7 @@ end
 constraints = [];
 for i = 1:Np % constraints for time steps t to t+Np-1, have terminal constraints for timestep t+Np
     constraints = [constraints x(:,i+1) == train_dynamics_midterm(x(:,i),...  % (11d)
-        u(1,i),param,slope_,radius_,limspeed_,maxspeed_)... % with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
+        u(1,i),param,slope_,radius_,DPspeed_,maxspeed_)... % with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
     d_min <= xbar_l(1,i) - x(1,i) - L ...  % (11e)
     0 <= x(2,i+1) <= maxspeed_(xbar(1,i+1)) ... % (11f)
     % can't use (11g) without force in states
@@ -92,7 +92,7 @@ end
 % initial constraint
 constraints = [constraints x0 == x(:,1)];  % (11j)
 % terminal constraint on terminal velocity from precomputed DP
-constraints = [constraints 0 <= x(2,Np+1) <= limspeed_(xbar(1,Np+1))];  % (11k)
+constraints = [constraints 0 <= x(2,Np+1) <= DPspeed_(xbar(1,Np+1))];  % (11k)
 % terminal constraint on distance
 constraints = [constraints d_min <= xbar_l(1,Np+1) - x(1,Np+1) - L ...  % (11l)
                 d_min <= xbar_l(1,Np+1) - x(1,Np+1) - L + (xbar_l(2,Np+1))^2/(2*a_l) - (x(2,Np+1)^2/(2*a_f))];  % (11m)
@@ -154,7 +154,7 @@ xbar_l(:,1) = xleader;
 for k = 1:Np+1  % sum from t to t+Np, because of matlab indexing -> from 1 to Np+1  
     if k < Np+1 % propagate leader states
         xbar_l(:,k+1) = train_dynamics(xbar_l(:,k),uoptleader(1,k),...
-            param,slope_,radius_,limspeed_,maxspeed_); 
+            param,slope_,radius_,DPspeed_,maxspeed_); 
         % the leader's optimal control input could be computed by optimizing 
         % using the measured (and stored) last state of the leader  
     end
@@ -169,7 +169,7 @@ end
 %% Define constraints
 constraints = [];
 for i = 1:Np  % constraints for time steps t to t+Np-1, have terminal constraints for timestep t+Np
-    constraints = [constraints x(:,i+1) == train_dynamics(x(:,i), u(1,i), param,slope_,radius_,limspeed_,maxspeed_)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
+    constraints = [constraints x(:,i+1) == train_dynamics(x(:,i), u(1,i), param,slope_,radius_,DPspeed_,maxspeed_)... %  with estimated values  alternatively: x(:,i+1) == train_dynamics(x(:,i), u(1,i), param) used in paper
     0 <= x(2,i+1) <= maxspeed_(xbar(1,i+1)) ... % (11f)
     -jmax <= (x(3,k+1) - x(3,k))/ (M * delta_t) <= jmax ... %(11g)
     -M * abr <= u(1,i) <= M * adr... % (11h)
@@ -178,7 +178,7 @@ end
 % initial constraint
 constraints = [constraints x0 == x(:,1)];  % (11j)
 % terminal constraint on terminal velocity from precomputed DP
-constraints = [constraints 0 <= x(2,Np+1) <= limspeed_(xbar(1,Np+1))];  % (11k)
+constraints = [constraints 0 <= x(2,Np+1) <= DPspeed_(xbar(1,Np+1))];  % (11k)
 % terminal constraints on distance
 constraints = [constraints d_min <= d(Np+1) ...  % (11l)
                 d_min <= d(Np+1) + (xbar_l(2,Np+1))^2/(2*a_l) - (x(2:Np+1)^2/(2*a_f))];  % (11m)

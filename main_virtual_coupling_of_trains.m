@@ -58,7 +58,7 @@ load DP_results
 %% define function interpolation for radius, slope, maxspeed, limspeed
 slope_ = @(v) 0.001 * interp1(profile(:,1),profile(:,2),v,'previous');
 radius_ = @(v) interp1(profile(:,1),profile(:,3),v,'previous');
-limspeed_ = @(v) interp1(p_sampled,vOpt_DP,v,'previous');
+DPspeed_ = @(v) interp1(p_sampled,vOpt_DP,v,'previous');
 maxspeed_ = @(v) 1/3.6 * interp1(veloc(:,1),veloc(:,2),v,'previous');
 
 % this could be brought to setup_param
@@ -77,14 +77,14 @@ elseif MODEL == midterm
 end
 
 % [feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f] = MPC(x0_l, x0_f,param,MODEL,...
-%         slope_,radius_,limspeed_,maxspeed_,p_sampled)
+%         slope_,radius_,DPspeed_,maxspeed_,p_sampled)
 
 [feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f] = MPC_leadingTrain(x0_l, x0_f,param,MODEL,...
-        slope_,radius_,limspeed_,maxspeed_,p_sampled)
+        slope_,radius_,DPspeed_,maxspeed_,p_sampled)
     
 
 %%
 
-plot_results(feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f, p_sampled, limspeed_)
+plot_results(feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f, p_sampled, DPspeed_)
 
 
