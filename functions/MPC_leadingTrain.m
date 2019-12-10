@@ -64,7 +64,7 @@ predErr = [] ;
 % predErr_f = zeros(nx,1);
 
 % initialisation for apriori estimation before first step
-uOpt_l_t = 0*1.8449e+05*ones(1,param.Np) ;
+uOpt_l_t = 1*1.8449e+05*ones(1,param.Np) ;
 %uOpt_f_t = 1.8449e+05*ones(1,param.Np) ;
 
 % indicator of MPC iteration
@@ -133,7 +133,7 @@ while xOpt_l(1,end) < 1200 %p_sampled(1,end)
     disp('leading train position')
     disp(x0_l)
     disp('optimal control input')
-    disp(uOpt_l(1))
+    disp(uOpt_l(end))
     
     
      plot_results([], xOpt_l, uOpt_l, [], [], predErr, x_pred_l, x_pred_f, p_sampled, DPspeed_, maxspeed_,22)
