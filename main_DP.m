@@ -80,9 +80,9 @@ comp_v_next = @(v,u,s) real(sqrt(v^2 + 2*ds*(-A -B*v -C*v^2 + M*g*slope(s) - u) 
 % at position s
 % Using trapezoidal formula used to discretize state
 % space to solve for u:
-Nu = 10;  % number of u grid points in dynamic input grid
+Nu = 100;  % number of u grid points in dynamic input grid
 comp_u = @(v,v_next,s)   A + B*v + C*v^2 - M*g*slope(s) - ...
-    (v_next^2 - v^2)*M /(2*ds);
+    (v_next^2 - v^2)*M /(2*ds);  % does not work like this
 %% Define stage cost
 Jstage = @(v,u) ds/v;
 
@@ -120,11 +120,16 @@ for s_indx = N_s-1:-1:1
         Ubest = nan;
         % Find input needed to get to v_min and v_max to grid input space
         % optimally
-        um = comp_u(v,v_min,s);
-        uM = comp_u(v,maxspeed(s+ds),s);
-        for u_grid = linspace(max(u_min,um),min(u_max,uM),Nu)
+        % um = comp_u(v,v_min,s);
+        % uM = comp_u(v,maxspeed(s+ds),s);
+        % for u_grid = linspace(max(u_min,um),min(u_max,uM),Nu)
+        for u_grid = linspace(u_min, u_max, Nu)
             v_next = comp_v_next(v,u_grid,s);
             if v_next>=v_min && v_next<=maxspeed(s + ds)
+%                 fprintf('current control input: %6.4e \n',double(u_grid))
+%                 fprintf('v_next: %6.4e', v_next)
+%                 fprintf('maxspeed at next position: %6.4e \n',  maxspeed(s + ds))
+%                 fprintf('-> feasible for this control input!\n')
                 Jactual = Jstage(v,u_grid) + Jopt{s_indx+1}(v_next);
                 if ~isnan(Jactual)
                     if Jactual<Jbest
@@ -132,6 +137,11 @@ for s_indx = N_s-1:-1:1
                         Ubest = u_grid;
                     end 
                 end % ~isnan
+            else
+%                 fprintf('current control input: %6.4e \n',double(u_grid))
+%                 fprintf('v_next: %6.4e', v_next)
+%                 fprintf('maxspeed at next position: %6.4e \n',  maxspeed(s + ds))
+%                 fprintf('-> not feasible for this control input!\n')
             end % v inside constraints
         end % loop over u
         if v>maxspeed(s)  % should not be necessary?
@@ -159,77 +169,89 @@ for i = 1:N_s-1
     vOpt(:,i+1) = comp_v_next(vOpt(:,i),uOpt(:,i),s_sampled(i));
 end
 
-% plotting
+%% plotting
 figure
+title('Results DP for paper model')
 subplot(3,1,1)
+hold on; grid on
 plot(s_sampled,maxspeed(s_sampled),s_sampled,vOpt)
-legend('vmax','actual velocity')
+legend('vmax','v DP')
+xlabel('position (m)')
+ylabel('velocity (m/s)')
 subplot(3,1,2)
+hold on; grid on
 plot(s_sampled(1:end-1),uOpt)
-xlabel('position')
-ylabel('Optimal Control')
+xlabel('position (m)')
+ylabel('Optimal Control (N)')
 slopes = [];
 subplot(3,1,3)
 for s = s_sampled
     slopes = [slopes slope(s)];
 end
+hold on; grid on
 plot(s_sampled,slopes)
-xlabel('position')
-ylabel('slope')
+xlabel('position (m)')
+ylabel('slope (mm/m)')
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%s
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% save results
+vOpt_DP = vOpt;
+p_sampled = s_sampled;
+save('DP_results_paper', 'uOpt', 'vOpt_DP','p_sampled')
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Debugging
-figure
-% plot of slope and maxspeed
-slopes = [];
-for s = s_sampled
-    slopes = [slopes slope(s)];
-end
-subplot(2,1,1)
-plot(s_sampled,slopes)
-xlabel('position')
-ylabel('slope')
-
-maxspeeds = [];
-for s = s_sampled
-    maxspeeds = [maxspeeds maxspeed(s)];
-end
-subplot(2,1,2)
-plot(s_sampled,maxspeeds)
-xlabel('position')
-ylabel('maxspeed')
+% figure
+% % plot of slope and maxspeed
+% slopes = [];
+% for s = s_sampled
+%     slopes = [slopes slope(s)];
+% end
+% subplot(2,1,1)
+% plot(s_sampled,slopes)
+% xlabel('position')
+% ylabel('slope')
+% 
+% maxspeeds = [];
+% for s = s_sampled
+%     maxspeeds = [maxspeeds maxspeed(s)];
+% end
+% subplot(2,1,2)
+% plot(s_sampled,maxspeeds)
+% xlabel('position')
+% ylabel('maxspeed')
 
 %% Debugging
-v = 20;
-s = 1100; % slope is zero here, maxspeed is 23.6111
-u = 0; % umin: -147936; umax: 144720
-comp_u = @(v,v_next,s)   A + B*v + C*v^2 - M*g*slope(s) - ...
-    (v_next^2 - v^2)*M /(2*ds);
-comp_v_next = @(v,u,s) real(sqrt(v^2 + 2*ds*(-A -B*v -C*v^2 + M*g*slope(s) - u) / M));
-
-
-v_next = comp_v_next(v,u,s);
-u_backwards = comp_u(v,v_next,s);
-
-%% 
-
-comp_u_test = @(v_next) A + B*v + C*v^2 - M*g*slope(s) - (v_next.^2 - v^2)*M /(2*ds);
-
-comp_v_next_test = @(u) sqrt(v^2 + 2*ds*(-A -B*v -C*v^2 + M*g*slope(s) - u) / M);
-
-u = linspace(u_min, u_max, 1000);
-v_next = linspace(0.1, 26, 1000);
-figure
-grid on; hold on
-title(['comp v next for v=', num2str(v), ' , s=', num2str(s)])
-% plot(-10e6:1000:10e6,comp_v_next_test(-10e6:1000:10e6))
-plot(u,comp_v_next_test(u))
-xlabel('u')
-ylabel('v next')
-
-figure
-grid on; hold on
-title(['comp u for v=', num2str(v), ' , s=', num2str(s)])
-plot(v_next,comp_u_test(v_next))
-xlabel('v next')
-ylabel('u')
+% v = 20;
+% s = 1100; % slope is zero here, maxspeed is 23.6111
+% u = 0; % umin: -147936; umax: 144720
+% comp_u = @(v,v_next,s)   A + B*v + C*v^2 - M*g*slope(s) - ...
+%     (v_next^2 - v^2)*M /(2*ds);
+% comp_v_next = @(v,u,s) real(sqrt(v^2 + 2*ds*(-A -B*v -C*v^2 + M*g*slope(s) - u) / M));
+% 
+% 
+% v_next = comp_v_next(v,u,s);
+% u_backwards = comp_u(v,v_next,s);
+% 
+% %% 
+% 
+% comp_u_test = @(v_next) A + B*v + C*v^2 - M*g*slope(s) - (v_next.^2 - v^2)*M /(2*ds);
+% 
+% comp_v_next_test = @(u) sqrt(v^2 + 2*ds*(-A -B*v -C*v^2 + M*g*slope(s) - u) / M);
+% 
+% u = linspace(u_min, u_max, 1000);
+% v_next = linspace(0.1, 26, 1000);
+% figure
+% grid on; hold on
+% title(['comp v next for v=', num2str(v), ' , s=', num2str(s)])
+% % plot(-10e6:1000:10e6,comp_v_next_test(-10e6:1000:10e6))
+% plot(u,comp_v_next_test(u))
+% xlabel('u')
+% ylabel('v next')
+% 
+% figure
+% grid on; hold on
+% title(['comp u for v=', num2str(v), ' , s=', num2str(s)])
+% plot(v_next,comp_u_test(v_next))
+% xlabel('v next')
+% ylabel('u')

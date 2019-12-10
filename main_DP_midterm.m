@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 %% DP to precompute optimal speed profile (MIDTERM DATA)
 % MPC Fall 2019
 % Author: Nathalie Bauschmann
@@ -163,7 +162,7 @@ p_sampled = s_sampled;
 % save date to DP_results.mat
 save('data\DP_results.mat','vOpt_DP','p_sampled','uOpt')
 
-=======
+
 %% DP to precompute optimal speed profile (MIDTERM DATA)
 % MPC Fall 2019
 % Author: Nathalie Bauschmann
@@ -308,23 +307,27 @@ end
 
 % plotting
 figure
+title('Results DP model from midterm')
 subplot(3,1,1)
+hold on; grid on
 plot(s_sampled,maxspeed(s_sampled),s_sampled,vOpt)
-legend('vmax','actual velocity')
+legend('vmax','v DP')
+xlabel('position (m)')
+ylabel('velocity (m/s)')
 subplot(3,1,2)
+hold on; grid on
 plot(s_sampled(1:end-1),uOpt)
-xlabel('position')
-ylabel('Optimal Control')
+xlabel('position (m)')
+ylabel('Optimal Control (N)')
 slopes = [];
 subplot(3,1,3)
 for s = s_sampled
     slopes = [slopes slope(s)];
 end
+hold on; grid on
 plot(s_sampled,slopes)
-xlabel('position')
-ylabel('slope')
+xlabel('position (m)')
+ylabel('slope (mm/m)')
 
 
 
-
->>>>>>> 939f7c2ddcda7cd4f596931f27f5b5919e5e48bb
