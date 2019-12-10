@@ -18,8 +18,6 @@
 %  - Need to change final constraints and final cost
 %     -> what should v_final be? 0?
 %
-%  TODO: Actually save results -> differentiate between models
-%
 %%
 clear all; close all
 %% Set path
@@ -40,7 +38,8 @@ Kv_DP = param.Kv_DP;
 Kl_DP = param.Kl_DP;
 
 %% Define state and input constraints
-Fmax0 = param.mumax*M*g; 
+% Fmax0 = param.mumax*M*g; 
+Fmax0 = 0.8 * param.mumax * M * g;  % testing
 umin = -Fmax0; 
 umax = Fmax0;
 
@@ -158,6 +157,8 @@ plot(s_sampled,slopes)
 xlabel('position')
 ylabel('slope')
 
-
-
+vOpt_DP = vOpt;
+p_sampled = s_sampled;
+% save date to DP_results.mat
+save('data\DP_results.mat','vOpt_DP','p_sampled','uOpt')
 
