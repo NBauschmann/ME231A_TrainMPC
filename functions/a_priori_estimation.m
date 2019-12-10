@@ -17,7 +17,8 @@ paper = 0 ;
 
 Np = param.Np ;
 
-ubar = [uOpt(:,2:end), uOpt(:,end)] ;
+%ubar = [uOpt(:,2:end), uOpt(:,end)] ;
+ubar = [uOpt(:,2:end), 0] ; % zero control input at the end
 
 xbar = zeros(size(xt,1),Np+1) ;
 xbar(:,1) = xt ;

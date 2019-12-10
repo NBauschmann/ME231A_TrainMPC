@@ -58,11 +58,13 @@ x_pred_f = [] ;
 u_pred_l = [] ;
 u_pred_f = [] ;
 
+% pred error not implemented yet
+predErr = [] ;
 % predErr_l = zeros(nx,1);
 % predErr_f = zeros(nx,1);
 
 % initialisation for apriori estimation before first step
-uOpt_l_t = 1.8449e+05*ones(1,param.Np) ;
+uOpt_l_t = 0*1.8449e+05*ones(1,param.Np) ;
 %uOpt_f_t = 1.8449e+05*ones(1,param.Np) ;
 
 % indicator of MPC iteration
@@ -132,13 +134,17 @@ while xOpt_l(1,end) < 1200 %p_sampled(1,end)
     disp(x0_l)
     disp('optimal control input')
     disp(uOpt_l(1))
+    
+    
+     plot_results([], xOpt_l, uOpt_l, [], [], predErr, x_pred_l, x_pred_f, p_sampled, DPspeed_, maxspeed_,22)
+
     % next MPC step   
     i = i + 1 ;
     toc
     
     end
     
-    
+feas = [];
 feas{1} = feas_l ;
 %feas{2} = feas_f ;
 
@@ -148,8 +154,7 @@ xOpt{1} = xOpt_l ;
 uOpt{1} = uOpt_l ;
 %uOpt{2} = uOpt_f ;
 
-% pred error not implemented yet
-predErr = [] ;
 
 
+xOpt{2}= [];  uOpt{2} = [];
 end
