@@ -71,18 +71,20 @@ if MODEL == paper
 
 elseif MODEL == midterm
     % initial condition
-    x0_l = [60;10] ;
-    x0_f = [6;10] ;
-
+    % x0_l = [60;19.5] ;  % [60; 10]
+    x0_l = [860; 20] ; 
+    x0_f = [6;19.5] ;
+    param.Np = 20 ; 
 end
 
-[feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f, u_pred_l, u_pred_f] = MPC(x0_l, x0_f,param,MODEL,...
-        slope_,radius_,DPspeed_,maxspeed_,p_sampled)
+% [feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f, u_pred_l, u_pred_f] = MPC(x0_l, x0_f,param,MODEL,...
+%         slope_,radius_,DPspeed_,maxspeed_,p_sampled)
 
 % [feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f, u_pred_l, u_pred_f] = MPC_leadingTrain(x0_l, x0_f,param,MODEL,...
 %         slope_,radius_,DPspeed_,maxspeed_,p_sampled)
-% 
 
+[feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f, u_pred_l, u_pred_f] = MPC_leadingTrainSC(x0_l, x0_f,param,MODEL,...
+        slope_,radius_,DPspeed_,maxspeed_,p_sampled)
 %%
 
  plot_results(feas, xOpt, uOpt, predErr, x_pred_l, x_pred_f, p_sampled, DPspeed_, maxspeed_)
