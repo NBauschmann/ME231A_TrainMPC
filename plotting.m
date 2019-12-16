@@ -43,7 +43,7 @@ predErr; %TODO
 fig = [];
 
 %%
-
+figure;
 plot(xOpt_l(1,:),xOpt_l(2,:),'ro')
 hold on
 if ~isempty(xOpt_f) % following train is also simulated
@@ -71,6 +71,7 @@ end
 
 %%
 
+figure;
 plot(xOpt_l(1,:),xOpt_l(2,:),'ro')
 hold on
 if ~isempty(xOpt_f) % following train is also simulated
@@ -98,6 +99,27 @@ end
 
 ylim([5, 50])
 xlim([0, 1250])
+
+
+%%
+
+figure;
+plot(xOpt_l(1,:),xOpt_l(2,:),'g')
+hold on
+
+plot(xOpt_f(1,:),xOpt_f(2,:),'b')
+hold on
+
+plot(p_sampled,maxspeed_(p_sampled),'r')
+grid on
+
+xlabel('position [m]')
+xlim([0, 1250])
+ylabel('velocity [m/s]')
+ylim([4, 50])
+
+title('Closed Loop Trajectory')
+legend('Leader','Follower','Speed limit')
 
 %%
 
