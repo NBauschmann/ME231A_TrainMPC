@@ -126,14 +126,14 @@ legend('Leader','Follower','Speed limit')
 figure;
 l = size(xOpt_f,2);
 distance = xOpt_l(1,:) - xOpt_f(1,:);
-plot(distance)
+plot(xOpt_f(1,:),distance)
 hold on
 safedist = (xOpt_f(2,:)).^2.*param.M./(2*param.Pbrake);
-plot(safedist);
+plot(xOpt_f(1,:), safedist);
 legend('Train distance', 'Follower braking length')
 title('Train distance')
 ylabel('length [m]')
-xlabel('step, k')
+xlabel('Follower position [m]')
 
 
 %%
