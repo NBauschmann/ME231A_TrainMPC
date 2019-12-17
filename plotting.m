@@ -126,15 +126,19 @@ legend('Leader','Follower','Speed limit')
 figure;
 l = size(xOpt_f,2);
 distance = xOpt_l(1,:) - xOpt_f(1,:);
-plot(xOpt_f(1,:),distance)
+plot(xOpt_l(1,:),distance)
 hold on
-safedist = (xOpt_f(2,:)).^2.*param.M./(2*param.Pbrake);
-plot(xOpt_f(1,:), safedist);
-legend('Train distance', 'Follower braking length')
+safedist = (xOpt_l(2,:)).^2.*param.M./(2*param.Pbrake);
+load('Moving_Block.mat')
+l = size(XOpt{1}(2,:),2);
+distance = XOpt{1}(1,:) - XOpt{2}(1,:);
+plot(XOpt{1}(1,:),distance)
+plot(xOpt_l(1,:), safedist);
+
+legend('Virtual Coupling', 'Moving Block', 'Leader braking length')
 title('Train distance')
 ylabel('length [m]')
-xlabel('Follower position [m]')
-
+xlabel('Leader position [m]')
 
 %%
 M = length(x_pred_l);
@@ -151,21 +155,21 @@ end
 
 figure;
 subplot(2,1,1)
-plot(predErr_l(1,:))
+plot(xOpt_l(1,1:end-N),predErr_l(1,:))
 title({'2-norm prediction error', 'leader'})
 ylabel('x_1')
 subplot(2,1,2)
-plot(predErr_l(2,:))
+plot(xOpt_l(1,1:end-N),predErr_l(2,:))
 ylabel('x_2')
 xlabel('step, k')
 
 figure;
 subplot(2,1,1)
-plot(predErr_f(1,:))
+plot(xOpt_f(1,1:end-N),predErr_f(1,:))
 title({'2-norm prediction error', 'follower'})
 ylabel('x_1')
 subplot(2,1,2)
-plot(predErr_f(2,:))
+plot(xOpt_f(1,1:end-N),predErr_f(2,:))
 ylabel('x_2')
 xlabel('step, k')
 
